@@ -43,18 +43,24 @@ local Config = Class(nil, {
         ["BLLIST_GR_EXCLUDED_SLD"] = true,
         ["BLLIST_GR_EXCLUDED_MASKS"] = true,
         ["BLLIST_FQDN_FILTER"] = true,
+        ["BLLIST_FQDN_FILTER_TYPE"] = true,
         ["BLLIST_FQDN_FILTER_FILE"] = true,
         ["BLLIST_IP_FILTER"] = true,
+        ["BLLIST_IP_FILTER_TYPE"] = true,
         ["BLLIST_IP_FILTER_FILE"] = true,
         ["BLLIST_SD_LIMIT"] = true,
         ["BLLIST_IP_LIMIT"] = true,
         ["BLLIST_GR_EXCLUDED_NETS"] = true,
         ["BLLIST_MIN_ENTRIES"] = true,
         ["BLLIST_STRIP_WWW"] = true,
-        ["DATA_DIR"] = true,
-        ["IPSET_DNSMASQ"] = true,
-        ["IPSET_IP_TMP"] = true,
-        ["IPSET_CIDR_TMP"] = true,
+        ["NFT_TABLE"] = true,
+        ["NFT_TABLE_DNSMASQ"] = true,
+        ["NFTSET_CIDR"] = true,
+        ["NFTSET_IP"] = true,
+        ["NFTSET_DNSMASQ"] = true,
+        ["NFTSET_CIDR_CFG"] = true,
+        ["NFTSET_IP_CFG"] = true,
+        ["NFTSET_DNSMASQ"] = true,
         ["DNSMASQ_DATA_FILE"] = true,
         ["IP_DATA_FILE"] = true,
         ["UPDATE_STATUS_FILE"] = true,
@@ -63,10 +69,10 @@ local Config = Class(nil, {
         ["ZI_ALL_URL"] = true,
         ["AF_IP_URL"] = true,
         ["AF_FQDN_URL"] = true,
-        ["RA_IP_IPSET_URL"] = true,
+        ["RA_IP_NFTSET_URL"] = true,
         ["RA_IP_DMASK_URL"] = true,
         ["RA_IP_STAT_URL"] = true,
-        ["RA_FQDN_IPSET_URL"] = true,
+        ["RA_FQDN_NFTSET_URL"] = true,
         ["RA_FQDN_DMASK_URL"] = true,
         ["RA_FQDN_STAT_URL"] = true,
         ["RBL_ENCODING"] = true,
@@ -130,6 +136,8 @@ end
 
 Config.BLLIST_ALT_NSLOOKUP = remap_bool(Config.BLLIST_ALT_NSLOOKUP)
 Config.BLLIST_ENABLE_IDN = remap_bool(Config.BLLIST_ENABLE_IDN)
+Config.BLLIST_FQDN_FILTER_TYPE = remap_bool(Config.BLLIST_FQDN_FILTER_TYPE)
+Config.BLLIST_IP_FILTER_TYPE = remap_bool(Config.BLLIST_IP_FILTER_TYPE)
 Config.BLLIST_STRIP_WWW = remap_bool(Config.BLLIST_STRIP_WWW)
 Config.BLLIST_FQDN_FILTER = remap_bool(Config.BLLIST_FQDN_FILTER)
 Config.BLLIST_IP_FILTER = remap_bool(Config.BLLIST_IP_FILTER)
@@ -214,7 +222,7 @@ local BlackListParser = Class(Config, {
     fqdn_pattern = "[a-z0-9_%.%-]-[a-z0-9_%-]+%.[a-z0-9%.%-]",
     url = "http://127.0.0.1",
     records_separator = "\n",
-    ips_separator = " | ",
+    ips_separator = "|",
 })
 
 function BlackListParser:new(t)
@@ -224,16 +232,16 @@ function BlackListParser:new(t)
     instance.records_separator = instance["records_separator"] or self.records_separator
     instance.ips_separator = instance["ips_separator"] or self.ips_separator
     instance.site_encoding = instance["site_encoding"] or self.site_encoding
-    instance.ip_records_count = 0
-    instance.ip_count = 0
     instance.ip_subnet_table = {}
     instance.cidr_count = 0
-    instance.fqdn_table = {}
+    instance.ip_records_count = 0
+    instance.ip_count = 0
     instance.fqdn_count = 0
     instance.sld_table = {}
     instance.fqdn_records_count = 0
-    instance.ip_table = {}
     instance.cidr_table = {}
+    instance.ip_table = {}
+    instance.fqdn_table = {}
     instance.iconv_handler = iconv and iconv.open(instance.encoding, instance.site_encoding) or nil
     return instance
 end
@@ -257,15 +265,15 @@ function BlackListParser:convert_to_punycode(input)
     return input and (idn.encode(input))
 end
 
-function BlackListParser:check_filter(str, filter_patterns)
+function BlackListParser:check_filter(str, filter_patterns, reverse)
     if filter_patterns and str then
         for pattern in pairs(filter_patterns) do
             if str:match(pattern) then
-                return true
+                return not reverse
             end
         end
     end
-    return false
+    return reverse
 end
 
 function BlackListParser:get_subnet(ip)
@@ -275,7 +283,7 @@ end
 function BlackListParser:fill_ip_tables(val)
     if val and val ~= "" then
         for ip_entry in val:gmatch(self.ip_pattern .. "/?%d?%d?") do
-            if not self.BLLIST_IP_FILTER or (self.BLLIST_IP_FILTER and not self:check_filter(ip_entry, self.BLLIST_IP_FILTER_PATTERNS)) then
+            if not self.BLLIST_IP_FILTER or (self.BLLIST_IP_FILTER and not self:check_filter(ip_entry, self.BLLIST_IP_FILTER_PATTERNS, self.BLLIST_IP_FILTER_TYPE)) then
                 if ip_entry:match("^" .. self.ip_pattern .. "$") and not self.ip_table[ip_entry] then
                     local subnet = self:get_subnet(ip_entry)
                     if subnet and (self.BLLIST_GR_EXCLUDED_NETS[subnet] or ((not self.BLLIST_IP_LIMIT or self.BLLIST_IP_LIMIT == 0) or (not self.ip_subnet_table[subnet] or self.ip_subnet_table[subnet] <= self.BLLIST_IP_LIMIT))) then
@@ -301,7 +309,7 @@ function BlackListParser:fill_domain_tables(val)
     if self.BLLIST_STRIP_WWW then
         val = val:gsub("^www[0-9]?%.", "")
     end
-    if not self.BLLIST_FQDN_FILTER or (self.BLLIST_FQDN_FILTER and not self:check_filter(val, self.BLLIST_FQDN_FILTER_PATTERNS)) then
+    if not self.BLLIST_FQDN_FILTER or (self.BLLIST_FQDN_FILTER and not self:check_filter(val, self.BLLIST_FQDN_FILTER_PATTERNS, self.BLLIST_FQDN_FILTER_TYPE)) then
         if val:match("^" .. self.fqdn_pattern .. "+$") then
         elseif self.BLLIST_ENABLE_IDN and val:match("^[^\\/&%?]-[^\\/&%?%.]+%.[^\\/&%?%.]+%.?$") then
             val = self:convert_to_punycode(val)
@@ -383,19 +391,37 @@ function BlackListParser:group_cidr_ranges()
 end
 
 function BlackListParser:write_ipset_config()
-    local file_handler = assert(io.open(self.IP_DATA_FILE, "w"), "Could not open ipset config")
-    local i = 0
-    for ipaddr in pairs(self.ip_table) do
-        file_handler:write(string.format("add %s %s\n", self.IPSET_IP_TMP, ipaddr))
-        i = i + 1
+    local file_handler = assert(io.open(self.IP_DATA_FILE, "w"), "Could not open nftset config")
+    for _, v in ipairs({ self.NFTSET_CIDR, self.NFTSET_IP }) do
+        file_handler:write(string.format("flush set %s %s\n", self.NFT_TABLE, v))
     end
-    self.ip_records_count = i
+    file_handler:write(
+        string.format("table %s {\n%s", self.NFT_TABLE, self.NFTSET_CIDR_CFG)
+    )
     local c = 0
-    for cidr in pairs(self.cidr_table) do
-        file_handler:write(string.format("add %s %s\n", self.IPSET_CIDR_TMP, cidr))
-        c = c + 1
+    if next(self.cidr_table) then
+        file_handler:write("elements={")
+        for cidr in pairs(self.cidr_table) do
+            file_handler:write(string.format("%s,", cidr))
+            c = c + 1
+        end
+        file_handler:write("};")
     end
     self.cidr_count = c
+    file_handler:write(
+        string.format("}\n%s", self.NFTSET_IP_CFG)
+    )
+    local i = 0
+    if next(self.ip_table) then
+        file_handler:write("elements={")
+        for ipaddr in pairs(self.ip_table) do
+            file_handler:write(string.format("%s,", ipaddr))
+            i = i + 1
+        end
+        file_handler:write("};")
+    end
+    self.ip_records_count = i
+    file_handler:write("}\n}\n")
     file_handler:close()
 end
 
@@ -405,7 +431,7 @@ function BlackListParser:write_dnsmasq_config()
         if self.BLLIST_ALT_NSLOOKUP then
             file_handler:write(string.format("server=/%s/%s\n", fqdn, self.BLLIST_ALT_DNS_ADDR))
         end
-        file_handler:write(string.format("ipset=/%s/%s\n", fqdn, self.IPSET_DNSMASQ))
+        file_handler:write(string.format("nftset=/%s/%s#%s\n", fqdn, self.NFT_TABLE_DNSMASQ, self.NFTSET_DNSMASQ))
     end
     file_handler:close()
 end
@@ -509,14 +535,14 @@ end
 
 local Rbl = Class(BlackListParser, {
     url = Config.RBL_ALL_URL,
+    records_separator = '%{"authority": ',
     ips_separator = ", ",
-    ip_string_pattern = "([a-f0-9/.:]+),?\n?",
 })
 
 function Rbl:sink()
     return function(chunk)
         if chunk and chunk ~= "" then
-            for ip_str, fqdn_str in chunk:gmatch("%[([a-f0-9/.:', ]+)%],([^,]-),.-" .. self.records_separator .. "?") do
+            for fqdn_str, ip_str in chunk:gmatch('"domains": %["?(.-)"?%].-"ips": %[([a-f0-9/.:", ]*)%].-' .. self.records_separator .. "?") do
                 fqdn_sink_func(self, ip_str, fqdn_str)
             end
         end
@@ -526,6 +552,8 @@ end
 
 local RblIp = Class(Rbl, {
     url = Config.RBL_IP_URL,
+    records_separator = ",",
+    ip_string_pattern = "([a-f0-9/.:]+)",
     sink = ip_sink,
 })
 
@@ -533,7 +561,6 @@ local RblIp = Class(Rbl, {
 
 local Zi = Class(BlackListParser, {
     url = Config.ZI_ALL_URL,
-    ip_string_pattern = "([a-f0-9%.:/ |]+);.-\n",
     site_encoding = Config.ZI_ENCODING,
 })
 
@@ -549,6 +576,7 @@ function Zi:sink()
 end
 
 local ZiIp = Class(Zi, {
+    ip_string_pattern = "([a-f0-9%.:/ |]+);.-\n",
     sink = ip_sink,
 })
 
@@ -556,7 +584,6 @@ local ZiIp = Class(Zi, {
 
 local Af = Class(BlackListParser, {
     url = Config.AF_FQDN_URL,
-    ip_string_pattern = "(.-)\n",
 })
 
 function Af:sink()
@@ -573,8 +600,8 @@ end
 
 local AfIp = Class(Af, {
     url = Config.AF_IP_URL,
+    ip_string_pattern = "(.-)\n",
     sink = ip_sink,
-    BLLIST_MIN_ENTRIES = 100,
 })
 
     -- ruantiblock

@@ -25,6 +25,9 @@ msgstr "Тревога"
 msgid "All"
 msgstr "Все"
 
+msgid "All entries except matching patterns"
+msgstr "Все записи, кроме соответствующих шаблонам"
+
 msgid "All hosts except listed"
 msgstr "Все хосты, кроме перечисленных"
 
@@ -36,9 +39,6 @@ msgstr "Применить"
 
 msgid "Apply proxy rules to router application traffic"
 msgstr "Применять правила прокси к трафику приложений роутера"
-
-msgid "Blacklist entry filters"
-msgstr "Фильтры записей блэклиста"
 
 msgid "Blacklist module"
 msgstr "Модуль блэклиста"
@@ -64,15 +64,15 @@ msgstr "Отмена"
 msgid "Changes have been saved."
 msgstr "Изменения сохранены."
 
-msgid "Clean up ipsets before updating blacklist"
-msgstr "Очищать ipset'ы перед обновлением блэклиста"
+msgid "Clean up nftsets before updating blacklist"
+msgstr "Очищать nft-сеты перед обновлением блэклиста"
 
 msgid "Command failed"
 msgstr "Команда не выполнена"
 
 msgid ""
-"Complete service shutdown, as well as deleting ipsets and blacklist data"
-msgstr "Полное выключение службы, а также удаление ipset'ов и данных блэклиста"
+"Complete service shutdown, as well as deleting nftsets and blacklist data"
+msgstr "Полное выключение службы, а также удаление nft-сетов и данных блэклиста"
 
 msgid "Contents have been saved."
 msgstr "Содержимое сохранено."
@@ -117,10 +117,10 @@ msgid "Enable"
 msgstr "Включить"
 
 msgid "Enable FQDN filter"
-msgstr "Включить фильтр FQDN"
+msgstr "Включить FQDN фильтр"
 
 msgid "Enable IP filter"
-msgstr "Включить фильтр IP"
+msgstr "Включить IP фильтр"
 
 msgid "Enabled"
 msgstr "Включено"
@@ -131,17 +131,14 @@ msgstr "Записи"
 msgid "Error"
 msgstr "Ошибка"
 
-msgid "Exclude IP addresses from blacklist by IP filter patterns"
-msgstr "Исключение IP адресов из блэклиста по шаблонам фильтра IP"
-
-msgid "Exclude domains from blacklist by FQDN filter patterns"
-msgstr "Исключение доменов из блэклиста по шаблонам фильтра FQDN"
-
 msgid "Expecting:"
 msgstr "Ожидается:"
 
 msgid "FQDN filter"
 msgstr "Фильтр FQDN"
+
+msgid "FQDN filter type"
+msgstr "Тип FQDN фильтра"
 
 msgid "Facility"
 msgstr "Категория"
@@ -161,6 +158,9 @@ msgstr "Фильтр хостов"
 msgid "Hour"
 msgstr "Час"
 
+msgid "If less than the specified number of entries are received from the source, then the lists are not updated"
+msgstr "Если от источника получено меньше указанного количества записей, то списки не обновляются"
+
 msgid "IP address"
 msgstr "IP-адрес"
 
@@ -169,6 +169,9 @@ msgstr "IP-адреса хостов"
 
 msgid "IP filter"
 msgstr "Фильтр IP"
+
+msgid "IP filter type"
+msgstr "Тип IP фильтра"
 
 msgid "IP limit"
 msgstr "Лимит IP адресов"
@@ -188,11 +191,8 @@ msgstr "Интервал"
 msgid "Invalid regular expression"
 msgstr "Неправильное регулярное выражение"
 
-msgid "Ipset"
-msgstr "Ipset"
-
-msgid "Iptables rules"
-msgstr "Правила iptables"
+msgid "Nftables rules"
+msgstr "Правила nftables"
 
 msgid "Last blacklist update"
 msgstr "Последнее обновление блэклиста"
@@ -227,11 +227,14 @@ msgstr "Сообщение"
 msgid "Message filter"
 msgstr "Фильтр сообщений"
 
+msgid "Minimum allowed number of entries"
+msgstr "Минимально возможное количество записей"
+
 msgid "Minute"
 msgstr "Минута"
 
-msgid "Module operation mode"
-msgstr "Режим работы модуля"
+msgid "Module settings"
+msgstr "Настройки модуля"
 
 msgid "Name"
 msgstr "Имя"
@@ -267,6 +270,9 @@ msgstr ""
 msgid "One of the following:"
 msgstr "Одно из следующих значений:"
 
+msgid "Only entries matching patterns"
+msgstr "Только записи, соответствующие шаблонам"
+
 msgid "Only listed hosts"
 msgstr "Только перечисленные хосты"
 
@@ -294,6 +300,12 @@ msgstr ""
 "отдельной строке, символ <code>#</code> в первой позиции строки - "
 "комментирует строку.<br />Примеры:"
 
+msgid "Pick IP addresses from blacklist by IP filter patterns"
+msgstr "Отбор IP адресов из блэклиста по шаблонам фильтра IP"
+
+msgid "Pick domains from blacklist by FQDN filter patterns"
+msgstr "Отбор  доменов из блэклиста по шаблонам фильтра FQDN"
+
 msgid "Proxy mode"
 msgstr "Режим прокси"
 
@@ -320,6 +332,9 @@ msgstr "Сохранить"
 
 msgid "Send UDP traffic to Tor"
 msgstr "Отправлять в Tor UDP-трафик"
+
+msgid "Send UDP traffic to transparent proxy"
+msgstr "Отправлять в прозрачный прокси UDP-трафик"
 
 msgid "Service"
 msgstr "Служба"
@@ -395,8 +410,20 @@ msgstr "Конфигурационный файл Tor"
 msgid "Tor mode"
 msgstr "Режим Tor"
 
-msgid "Transparent proxy port for iptables rules"
-msgstr "Порт прозрачного прокси для правил iptables"
+msgid "Transparent proxy"
+msgstr "Прозрачный прокси"
+
+msgid "Transparent proxy mode"
+msgstr "Режим прозрачного прокси"
+
+msgid "Transparent proxy port"
+msgstr "Порт прозрачного прокси"
+
+msgid "Transparent proxy TCP port"
+msgstr "TCP порт прозрачного прокси"
+
+msgid "Transparent proxy UDP port"
+msgstr "UDP порт прозрачного прокси"
 
 msgid "Type an expression..."
 msgstr "Введите выражение..."
@@ -466,6 +493,9 @@ msgstr "шаблон сети"
 
 msgid "none (user entries only)"
 msgstr "нет (только записи пользователя)"
+
+msgid "requires installed blacklist module"
+msgstr "необходим установленный модуль блэклиста"
 
 msgid "user entries only"
 msgstr "только записи пользователя"
